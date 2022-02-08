@@ -11,39 +11,39 @@ const db = new Database(process.argv[2]);
 
 const initStatement = db.prepare(
     `CREATE TABLE 'photos' (
-		'id' INTEGER NOT NULL,
+        'id' INTEGER NOT NULL,
 
-		'date' TEXT,
-		'deviceMake' TEXT,
-		'deviceModel' TEXT,
+        'date' TEXT,
+        'deviceMake' TEXT,
+        'deviceModel' TEXT,
         'software' TEXT,
 
-		'fileType' TEXT NOT NULL,
-		'filePath' TEXT NOT NULL,
+        'fileType' TEXT NOT NULL,
+        'filePath' TEXT NOT NULL,
 
-		PRIMARY KEY ('id' AUTOINCREMENT)
-	);`,
+        PRIMARY KEY ('id' AUTOINCREMENT)
+    );`,
 );
 initStatement.run();
 
 const insertStatement = db.prepare(
     `INSERT INTO 'photos' (
-		'date',
-		'deviceMake',
-		'deviceModel',
+        'date',
+        'deviceMake',
+        'deviceModel',
         'software',
 
-		'fileType',
-		'filePath'
-	) VALUES (
-		?,
-		?,
-		?,
+        'fileType',
+        'filePath'
+    ) VALUES (
+        ?,
+        ?,
+        ?,
         ?,
 
-		?,
-		?
-	)`,
+        ?,
+        ?
+    )`,
 );
 
 const processDir = async (path) => {
