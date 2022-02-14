@@ -16,7 +16,6 @@ const initStatement = db.prepare(
         'date' TEXT,
         'deviceMake' TEXT,
         'deviceModel' TEXT,
-        'software' TEXT,
 
         'fileType' TEXT NOT NULL,
         'filePath' TEXT NOT NULL,
@@ -31,12 +30,10 @@ const insertStatement = db.prepare(
         'date',
         'deviceMake',
         'deviceModel',
-        'software',
 
         'fileType',
         'filePath'
     ) VALUES (
-        ?,
         ?,
         ?,
         ?,
@@ -78,7 +75,6 @@ const processFile = async (path) => {
                 : null,
             exif.Make,
             exif.Model,
-            exif.Software,
 
             type,
             path,
