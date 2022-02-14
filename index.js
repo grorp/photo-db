@@ -48,19 +48,17 @@ const processDir = async (path) => {
         withFileTypes: true,
     });
 
-    await Promise.all(
-        entries.map(async (entry) => {
-            const entryPath = join(path, entry.name);
+    for (const entry of entries) {
+        const entryPath = join(path, entry.name);
 
-            if (entry.isDirectory()) {
-                await processDir(entryPath);
-            }
+        if (entry.isDirectory()) {
+            await processDir(entryPath);
+        }
 
-            if (entry.isFile()) {
-                await processFile(entryPath);
-            }
-        }),
-    );
+        if (entry.isFile()) {
+            await processFile(entryPath);
+        }
+    }
 };
 
 const processFile = async (path) => {
