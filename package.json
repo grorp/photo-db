@@ -1,5 +1,6 @@
 {
     "name": "photo-db",
+    "description": "The script I use to generate my SQLite 3 photo database.",
     "private": true,
     "type": "module",
     "bin": "./src/index.js",
