@@ -1,52 +1,30 @@
 #!/usr/bin/env node
 
-import { readdir } from 'fs/promises';
-import { join } from 'path';
-
 import Database from 'better-sqlite3';
 import { lookup } from 'mime-types';
+import { nanoid } from 'nanoid';
 import { exiftool, ExifDateTime } from 'exiftool-vendored';
+import sharp from 'sharp';
+import { readdir, readFile } from 'fs/promises';
+import { join } from 'path';
 
-const db = new Database(process.argv[2]);
+const db = new Database(process.argv[3]);
 
-const initStatement = db.prepare(
+const setupStmt = db.prepare(
     `CREATE TABLE 'photos' (
-        'id' INTEGER NOT NULL,
-
+        'id' TEXT NOT NULL,
         'date' TEXT,
-        'deviceMake' TEXT,
-        'deviceModel' TEXT,
 
-        'fileType' TEXT NOT NULL,
-        'filePath' TEXT NOT NULL,
-
-        PRIMARY KEY ('id' AUTOINCREMENT)
+        'type' TEXT NOT NULL,
+        'path' TEXT NOT NULL,
+        'thumbnailType' TEXT NOT NULL,
+        'thumbnailPath' TEXT NOT NULL
     );`,
 );
-initStatement.run();
-
-const insertStatement = db.prepare(
-    `INSERT INTO 'photos' (
-        'date',
-        'deviceMake',
-        'deviceModel',
-
-        'fileType',
-        'filePath'
-    ) VALUES (
-        ?,
-        ?,
-        ?,
-
-        ?,
-        ?
-    )`,
-);
+setupStmt.run();
 
 const processDir = async (path) => {
-    const entries = await readdir(path, {
-        withFileTypes: true,
-    });
+    const entries = await readdir(path, { withFileTypes: true });
 
     for (const entry of entries) {
         const entryPath = join(path, entry.name);
@@ -54,32 +32,62 @@ const processDir = async (path) => {
         if (entry.isDirectory()) {
             await processDir(entryPath);
         }
-
         if (entry.isFile()) {
             await processFile(entryPath);
         }
     }
 };
 
+const insertStmt = db.prepare(
+    `INSERT INTO 'photos' (
+        'id',
+        'date',
+
+        'type',
+        'path',
+        'thumbnailType',
+        'thumbnailPath'
+    ) VALUES (
+        ?,
+        ?,
+
+        ?,
+        ?,
+        ?,
+        ?
+    )`,
+);
+
 const processFile = async (path) => {
     const type = lookup(path) || 'application/octet-stream';
 
     if (type.startsWith('image/')) {
-        const exif = await exiftool.read(path);
+        const id = nanoid();
 
-        insertStatement.run(
+        const exif = await exiftool.read(path);
+        const date =
             exif.DateTimeOriginal instanceof ExifDateTime
                 ? exif.DateTimeOriginal.toISOString()
-                : null,
-            exif.Make,
-            exif.Model,
+                : null;
+
+        const thumbPath = join(process.argv[4], id + '.jpeg');
+        await sharp(await readFile(path))
+            .rotate()
+            .resize({ width: 256, height: 256, fit: 'cover' })
+            .jpeg({ quality: 80, mozjpeg: true })
+            .toFile(thumbPath);
+
+        insertStmt.run(
+            id,
+            date,
 
             type,
             path,
+            'image/jpeg',
+            thumbPath,
         );
     }
 };
 
-await processDir(process.argv[3]);
-
+await processDir(process.argv[2]);
 exiftool.end();
